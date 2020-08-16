@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+# A minimalistic tool to launch git commands on multiple repositories.
+# mr PATH <command> Eg: mr $HOME/dev/ status
+# Launches git status on every git repository under $HOME/dev directory.
+
+set -o errexit # Exit if error.
+set -o nounset # Error if use of unset variable. 
+
+SUCCESS_CODE=0
+ERR_CODE=1
+GIT_BIN="git"
+GIT_DIR=".git"
+
+# Handles errors.
+error() {
+    >&2 echo "$1"
+    exit $ERR_CODE
+}
+
+# Prints help.
+usage() {
+    echo "A minimalistic tool to launch git commands on multiple repositories."
+    echo "mr PATH <command> Eg: mr $HOME/dev/ status"
+    echo "mr -h or mr --help to display this help."
+    echo "Launches git status on every git repository under $HOME/dev directory."
+
+    exit $SUCCESS_CODE
+}
+
+# Manages script parameters.
+manage_options() {
+
+    # Iterate through params to display help if asked.
+    while (( $# )); do
+        case $1 in 
+            "-h"|"--help") usage;;
+        esac
+
+        shift
+    done
+
+    # Parameters check.
+    if (( $# != 2 )); then
+        error "2 parameters required: ROOT_PATH, GIT_CMD"
+    fi
+}
+
+# Program entry point.
+main() {
+
+    manage_options "$@"
+
+    local root_dir="$1"
+    local git_cmd="$2"
+    local current_dir="$PWD"
+
+    # Check root path parameter.
+    if [[ ! -d "$root_dir" ]]; then
+        error "$root_dir does not exists or is not a directory"
+    fi
+
+    # Check git install
+    if ! command -v $GIT_BIN &> /dev/null; then
+        error "$GIT_BIN could not be found. Check your git installation."
+    fi
+
+    # Launch command on every git repository in root_dir.
+    while read -r project; do
+        local repo
+        repo=$(realpath "${project}"/..)
+        cd "$repo"
+        echo "------------------------------------------------"
+        echo "$repo"
+        echo "------------------------------------------------"
+        $GIT_BIN $git_cmd
+        echo -e ''
+        cd "$current_dir"
+    done < <(find "$root_dir" -type d -name $GIT_DIR)
+
+    exit $SUCCESS_CODE
+}
+
+main "$@"
