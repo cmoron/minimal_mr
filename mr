@@ -39,17 +39,17 @@ manage_options() {
 
         shift
     done
-
-    # Parameters check.
-    if (( $# != 2 )); then
-        error "2 parameters required: ROOT_PATH, GIT_CMD"
-    fi
 }
 
 # Program entry point.
 main() {
 
     manage_options "$@"
+
+    # Parameters check.
+    if (( $# != 2 )); then
+        error "2 parameters required: ROOT_PATH, GIT_CMD"
+    fi
 
     local root_dir="$1"
     local git_cmd="$2"
