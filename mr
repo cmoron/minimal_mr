@@ -7,6 +7,7 @@
 set -o errexit # Exit if error.
 set -o nounset # Error if use of unset variable. 
 
+# Script constants.
 SUCCESS_CODE=0
 ERR_CODE=1
 GIT_BIN="git"
@@ -47,25 +48,18 @@ main() {
     manage_options "$@"
 
     # Parameters check.
-    if (( $# != 2 )); then
-        error "2 parameters required: ROOT_PATH, GIT_CMD"
+    if (( $# < 1 )); then
+        error "minimum 1 argument required: GIT_CMD [params]"
     fi
 
-    local root_dir="$1"
-    local git_cmd="$2"
     local current_dir="$PWD"
-
-    # Check root path parameter.
-    if [[ ! -d "$root_dir" ]]; then
-        error "$root_dir does not exists or is not a directory"
-    fi
 
     # Check git install
     if ! command -v $GIT_BIN &> /dev/null; then
         error "$GIT_BIN could not be found. Check your git installation."
     fi
 
-    # Launch command on every git repository in root_dir.
+    # Launch command on every git repository in PWD.
     while read -r project; do
         local repo
         repo=$(realpath "${project}"/..)
@@ -73,10 +67,10 @@ main() {
         echo "------------------------------------------------"
         echo "$repo"
         echo "------------------------------------------------"
-        $GIT_BIN $git_cmd
+        $GIT_BIN "$@"
         echo -e ''
         cd "$current_dir"
-    done < <(find "$root_dir" -type d -name $GIT_DIR)
+    done < <(find "$current_dir" -type d -name $GIT_DIR)
 
     exit $SUCCESS_CODE
 }
